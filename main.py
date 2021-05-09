@@ -24,11 +24,12 @@ async def shutdown():
 @app.get("/customers", status_code=200)
 async def customers():
     # app.db_connection.row_factory = lambda cursor, x: x[0]
-    app.db_connection.row_factory = sqlite3.Row
-    result = app.db_connection.execute("SELECT CustomerId, CompanyName , Address || ' ' || PostalCode "
-                                       "|| ' ' || "
-                                       " City || ' ' || Country as full_address "
-                                       "FROM Customers").fetchall()
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    result = cursor.execute("SELECT CustomerId, CompanyName , IFNULL(Address, '') || ' ' || IFNULL(PostalCode, '') "
+                            "|| ' ' ||  IFNULL(City, '') || ' ' || IFNULL(Country, '') as full_address "
+                            "FROM Customers "
+                            "order by CustomerId").fetchall()
     return {
         "customers": [
             {"id": f'{x["CustomerId"]}', "name": f'{x["CompanyName"]}', "full_address": f'{x["full_address"]}'}
@@ -39,10 +40,11 @@ async def customers():
 
 @app.get("/categories", status_code=200)
 async def get_categories():
-    app.db_connection.row_factory = sqlite3.Row
-    result = app.db_connection.execute("select categoryid, categoryname "
-                                       "from categories "
-                                       "order by categoryid").fetchall()
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    result = cursor.execute("select categoryid, categoryname "
+                            "from categories "
+                            "order by categoryid").fetchall()
     return {
         "categories": [
             {"id": f'{x["categoryid"]}', "name": f'{x["categoryname"]}'}
