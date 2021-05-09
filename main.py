@@ -21,6 +21,19 @@ async def shutdown():
     app.db_connection.close()
 
 
+@app.get("/products/{id}", status_code=200)
+async def products_id(id: int):
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    result = cursor.execute(
+        "select ProductId as id, ProductName as name "
+        "from Products "
+        "where ProductId = ?", (id, )
+    ).fetchall()
+
+    return result
+
+
 @app.get("/customers", status_code=200)
 async def customers():
     # app.db_connection.row_factory = lambda cursor, x: x[0]
