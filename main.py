@@ -7,6 +7,9 @@ import uvicorn
 
 from typing import List
 
+from starlette import status
+from starlette.responses import JSONResponse
+
 app = FastAPI()
 
 
@@ -30,6 +33,9 @@ async def products_id(id: int):
         "from Products "
         "where ProductId = ?", (id, )
     ).fetchone()
+
+    if result is None:
+        return JSONResponse(status_code=404)
 
     return result
 
