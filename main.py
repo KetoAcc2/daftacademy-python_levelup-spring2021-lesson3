@@ -29,7 +29,7 @@ async def products_id(id: int):
         "select ProductId as id, ProductName as name "
         "from Products "
         "where ProductId = ?", (id, )
-    ).fetchall()
+    ).fetchone()
 
     return result
 
