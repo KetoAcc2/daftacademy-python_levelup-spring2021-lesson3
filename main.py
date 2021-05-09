@@ -25,7 +25,7 @@ async def shutdown():
 
 
 @app.get("/employees", status_code=200)
-async def get_employees(limit: int, offset: int, order: str):
+async def get_employees(limit: int = 1, offset: int = 0, order: str = 'EmployeeID'):
     valid_orders = ("FirstName", "LastName", "City")
     if order != "EmployeeID":
         if order == 'first_name':
