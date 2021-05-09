@@ -32,7 +32,7 @@ async def customers():
         " || ' ' ||  COALESCE(City, '') || ' ' || COALESCE(Country, '')"
         " as full_address "
         "FROM Customers "
-        "order by CustomerId"
+        "order by upper(CustomerId);"
     ).fetchall()
 
     return dict(customers=result)
@@ -44,7 +44,7 @@ async def get_categories():
     cursor.row_factory = sqlite3.Row
     result = cursor.execute("select categoryid, categoryname "
                             "from categories "
-                            "order by categoryid").fetchall()
+                            "order by categoryid;").fetchall()
     return {
         "categories": [
             {"id": f'{x["categoryid"]}', "name": f'{x["categoryname"]}'}
