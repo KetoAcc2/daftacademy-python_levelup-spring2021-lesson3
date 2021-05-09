@@ -42,15 +42,10 @@ async def customers():
 async def get_categories():
     cursor = app.db_connection.cursor()
     cursor.row_factory = sqlite3.Row
-    result = cursor.execute("select categoryid, categoryname "
+    result = cursor.execute("select categoryid as id, categoryname as name "
                             "from categories "
                             "order by categoryid;").fetchall()
-    return {
-        "categories": [
-            {"id": f'{x["categoryid"]}', "name": f'{x["categoryname"]}'}
-            for x in result
-        ]
-    }
+    return dict(categories=result)
 
 
 if __name__ == '__main__':
