@@ -24,6 +24,25 @@ async def shutdown():
     app.db_connection.close()
 
 
+@app.get("/employees", status_code=200)
+async def get_employees(limit: int, offset: int, order: str):
+    valid_orders = ("first_name", "last_name", "city")
+    if order not in valid_orders:
+        return JSONResponse(status_code=400)
+
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    result = cursor.execute(
+        "select e.EmployeeId as id, e.LastName as last_name, e.FirstName as first_name, e.City as city "
+        "from (select *"
+        "      from Employees"
+        "      limit ? offset ?) e "
+        "order by ?", (limit, offset, order)
+    ).fetchone()
+
+    return dict(employees=result)
+
+
 @app.get("/products/{id}", status_code=200)
 async def products_id(id: int):
     cursor = app.db_connection.cursor()
