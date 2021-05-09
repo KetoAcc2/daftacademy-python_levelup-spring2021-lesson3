@@ -26,19 +26,25 @@ async def shutdown():
 
 @app.get("/employees", status_code=200)
 async def get_employees(limit: int, offset: int, order: str):
-    valid_orders = ("first_name", "last_name", "city")
-    if order not in valid_orders:
-        return JSONResponse(status_code=400)
+    valid_orders = ("FirstName", "LastName", "City")
+    if order != "EmployeeID":
+        if order == 'first_name':
+            order = valid_orders[0]
+        elif order == 'last_name':
+            order = valid_orders[1]
+        elif order == 'city':
+            order = valid_orders[2]
+        else:
+            return JSONResponse(status_code=400)
 
     cursor = app.db_connection.cursor()
     cursor.row_factory = sqlite3.Row
     result = cursor.execute(
-        "select e.EmployeeId as id, e.LastName as last_name, e.FirstName as first_name, e.City as city "
-        "from (select *"
-        "      from Employees"
-        "      limit ? offset ?) e "
-        "order by ?", (limit, offset, order)
-    ).fetchone()
+        f"""select EmployeeID id, LastName last_name, FirstName first_name, City city 
+        from Employees 
+        order by {order} 
+        LIMIT {limit} OFFSET {offset};"""
+    ).fetchall()
 
     return dict(employees=result)
 
