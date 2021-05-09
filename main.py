@@ -26,16 +26,16 @@ async def customers():
     # app.db_connection.row_factory = lambda cursor, x: x[0]
     cursor = app.db_connection.cursor()
     cursor.row_factory = sqlite3.Row
-    result = cursor.execute("SELECT CustomerId, CompanyName , IFNULL(Address, '') || ' ' || IFNULL(PostalCode, '') "
-                            "|| ' ' ||  IFNULL(City, '') || ' ' || IFNULL(Country, '') as full_address "
-                            "FROM Customers "
-                            "order by CustomerId").fetchall()
-    return {
-        "customers": [
-            {"id": f'{x["CustomerId"]}', "name": f'{x["CompanyName"]}', "full_address": f'{x["full_address"]}'}
-            for x in result
-        ]
-    }
+    result = cursor.execute(
+        "SELECT CustomerId as id, CompanyName as name,"
+        "COALESCE(Address, '') || ' ' || COALESCE(PostalCode, '')"
+        " || ' ' ||  COALESCE(City, '') || ' ' || COALESCE(Country, '')"
+        " as full_address "
+        "FROM Customers "
+        "order by CustomerId"
+    ).fetchall()
+
+    return dict(customers=result)
 
 
 @app.get("/categories", status_code=200)
