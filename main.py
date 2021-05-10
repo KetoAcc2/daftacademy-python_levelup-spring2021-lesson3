@@ -34,13 +34,14 @@ async def products_orders(product_id: int = 0):
 
     count = cursor.execute(
         f"""
-        select count(1)
+        select ProductId
         from Products
         where ProductId = {product_id}
         """
     )
+    res = count.rowcount
 
-    if count == 0:
+    if res == 0:
         return JSONResponse(status_code=404)
 
     result = cursor.execute(
@@ -50,6 +51,7 @@ async def products_orders(product_id: int = 0):
         from Orders o inner join Customers c on o.CustomerId = c.CustomerId
                       inner join 'Order Details' od on o.OrderId = od.OrderId
                       inner join Products p on od.ProductId = p.ProductId
+        where p.ProductId = {product_id}
         order by o.OrderId
         """
     ).fetchall()
