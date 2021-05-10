@@ -24,6 +24,84 @@ async def shutdown():
     app.db_connection.close()
 
 
+class Category(BaseModel):
+    name: str
+
+
+@app.post("/categories", status_code=201)
+async def get_categories(category: Category):
+    connection = app.db_connection
+    cursor = connection.execute(
+        f"insert into Categories (CategoryName) values ('{category.name}')"
+    )
+    connection.commit()
+    return {
+        "id": cursor.lastrowid,
+        "name": category.name
+    }
+
+
+@app.put("/categories{category_id}", status_code=200)
+async def update_category(category: Category, category_id: int = 0):
+    if category_id == 0:
+        raise HTTPException(status_code=404)
+
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    count = cursor.execute(
+        f"""
+            select CategoryId
+            from Categories
+            where CategoryId = {category_id}
+            """
+    ).fetchone()
+
+    if count is None:
+        raise HTTPException(status_code=404)
+
+    connection = app.db_connection
+    connection.execute(
+        "update Categories set CategoryName = ? where CategoryId = ?"
+        , (category.name, category_id)
+    )
+    connection.commit()
+
+    result = cursor.execute(
+        f"""
+        select CategoryId as id, CategoryName as name
+        from Categories 
+        where CategoryId = {category_id}
+        """
+    ).fetchone()
+
+    return result
+
+
+@app.delete("/categories/category_id", status_code=200)
+async def delete_category(category_id: int = 0):
+    if category_id == 0:
+        raise HTTPException(status_code=404)
+
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    count = cursor.execute(
+        f"""
+        select CategoryId
+        from Categories
+        where CategoryId = {category_id}
+        """
+    ).fetchone()
+
+    if count is None:
+        raise HTTPException(status_code=404)
+
+    cursor = app.db_connection.execute(
+        "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
+    )
+    app.db_connection.commit()
+    return {"deleted": cursor.rowcount}
+
+
 @app.get("/products/{product_id}/orders", status_code=200)
 async def products_orders(product_id: int = 0):
     if product_id == 0:
@@ -112,7 +190,7 @@ async def products_id(id: int):
     result = cursor.execute(
         "select ProductId as id, ProductName as name "
         "from Products "
-        "where ProductId = ?", (id, )
+        "where ProductId = ?", (id,)
     ).fetchone()
 
     if result is None:
