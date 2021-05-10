@@ -28,95 +28,119 @@ class Category(BaseModel):
     name: str
 
 
-@app.post("/categories", status_code=201)
-async def get_categories(category: Category):
-    connection = app.db_connection
-    execution = connection.execute(
-        "insert into Categories (CategoryName) values (?)",
-        (category.name, )
-    )
-    connection.commit()
-
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    result = cursor.execute(
-        """
-        SELECT CategoryID id, CategoryName name 
-        FROM Categories 
-        WHERE CategoryID = ?
-        """,
-        (execution.lastrowid,)).fetchone()
-    return result
+@app.post('/categories', status_code=201)
+async def categories_post(category: Category):
+    cursor = app.db_connection.execute("INSERT INTO Categories (CategoryName) VALUES (?)", (category.name,))
+    app.db_connection.commit()
+    new_categories_id = cursor.lastrowid
+    app.db_connection.row_factory = sqlite3.Row
+    categories = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (new_categories_id,)).fetchone()
+    return categories
 
 
-@app.put("/categories{category_id}", status_code=200)
-async def update_category(category: Category, category_id: int = 0):
-    if category_id == 0:
-        raise HTTPException(status_code=404)
-
-    connection = app.db_connection
-    connection.execute(
-        "update Categories set CategoryName = ? where CategoryId = ?"
-        , (category.name, category_id, )
-    )
-    connection.commit()
-
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    result = cursor.execute(
-        f"""
-        select CategoryId as id, CategoryName as name
-        from Categories
-        where CategoryId = {category_id}
-        """
-    ).fetchone()
-
-    if result is None:
-        raise HTTPException(status_code=404)
-
-    return result
-
-# @app.put('/categories/{id}', status_code=200)
-# async def categories_id(category: Category, category_id: int):
-#     app.db_connection.execute(
-#         "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
-#             category.name, category_id,)
-#     )
-#     app.db_connection.commit()
-#     app.db_connection.row_factory = sqlite3.Row
-#     data = app.db_connection.execute(
-#         """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
-#         (category_id,)).fetchone()
-#     if data is None:
-#         raise HTTPException(status_code=404)
-#     return data
-
-
-@app.delete("/categories/{category_id}", status_code=200)
-async def delete_category(category_id: int = 0):
-    if category_id == 0:
-        raise HTTPException(status_code=404)
-
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    count = cursor.execute(
-        f"""
-        select CategoryId
-        from Categories
-        where CategoryId = {category_id}
-        """
-    ).fetchone()
-
-    if count is None:
-        raise HTTPException(status_code=404)
-
-    cursor = app.db_connection.execute(
-        "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
+@app.put('/categories/{id}', status_code=200)
+async def categories_id(category: Category, id: int):
+    app.db_connection.execute(
+        "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
+            category.name, id,)
     )
     app.db_connection.commit()
-    if not cursor.rowcount:
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (id,)).fetchone()
+    if data is None:
         raise HTTPException(status_code=404)
-    return {"deleted": 1}
+    return data
+
+
+@app.delete('/categories/{id}', status_code=200)
+async def categories_delete(id: int):
+    cursor = app.db_connection.execute(
+        "DELETE FROM Categories WHERE CategoryID = ?", (id,)
+    )
+    app.db_connection.commit()
+    if cursor.rowcount:
+        return {"deleted": 1}
+    raise HTTPException(status_code=404)
+
+
+# @app.post("/categories", status_code=201)
+# async def get_categories(category: Category):
+#     connection = app.db_connection
+#     execution = connection.execute(
+#         "insert into Categories (CategoryName) values (?)",
+#         (category.name, )
+#     )
+#     connection.commit()
+# 
+#     cursor = app.db_connection.cursor()
+#     cursor.row_factory = sqlite3.Row
+#     result = cursor.execute(
+#         """
+#         SELECT CategoryID id, CategoryName name 
+#         FROM Categories 
+#         WHERE CategoryID = ?
+#         """,
+#         (execution.lastrowid,)).fetchone()
+#     return result
+# 
+# 
+# @app.put("/categories{category_id}", status_code=200)
+# async def update_category(category: Category, category_id: int = 0):
+#     if category_id == 0:
+#         raise HTTPException(status_code=404)
+# 
+#     connection = app.db_connection
+#     connection.execute(
+#         "update Categories set CategoryName = ? where CategoryId = ?"
+#         , (category.name, category_id, )
+#     )
+#     connection.commit()
+# 
+#     cursor = app.db_connection.cursor()
+#     cursor.row_factory = sqlite3.Row
+#     result = cursor.execute(
+#         f"""
+#         select CategoryId as id, CategoryName as name
+#         from Categories
+#         where CategoryId = {category_id}
+#         """
+#     ).fetchone()
+# 
+#     if result is None:
+#         raise HTTPException(status_code=404)
+# 
+#     return result
+
+
+# @app.delete("/categories/{category_id}", status_code=200)
+# async def delete_category(category_id: int = 0):
+#     if category_id == 0:
+#         raise HTTPException(status_code=404)
+# 
+#     cursor = app.db_connection.cursor()
+#     cursor.row_factory = sqlite3.Row
+#     count = cursor.execute(
+#         f"""
+#         select CategoryId
+#         from Categories
+#         where CategoryId = {category_id}
+#         """
+#     ).fetchone()
+# 
+#     if count is None:
+#         raise HTTPException(status_code=404)
+# 
+#     cursor = app.db_connection.execute(
+#         "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
+#     )
+#     app.db_connection.commit()
+#     if not cursor.rowcount:
+#         raise HTTPException(status_code=404)
+#     return {"deleted": 1}
 
 
 @app.get("/products/{product_id}/orders", status_code=200)
