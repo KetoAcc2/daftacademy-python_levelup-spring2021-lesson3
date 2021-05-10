@@ -27,7 +27,7 @@ async def shutdown():
 @app.get("/products/{product_id}/orders", status_code=200)
 async def products_orders(product_id: int = 0):
     if product_id == 0:
-        return JSONResponse(status_code=404)
+        raise HTTPException(status_code=404)
 
     cursor = app.db_connection.cursor()
     cursor.row_factory = sqlite3.Row
@@ -40,23 +40,22 @@ async def products_orders(product_id: int = 0):
         """
     ).fetchone()
 
-    if len(count) == 0:
-        return JSONResponse(status_code=404)
+    if count is None:
+        raise HTTPException(status_code=404)
 
     result = cursor.execute(
         f"""
         select o.OrderId as id, c.CompanyName as customer, od.Quantity as quantity,
-               ((od.UnitPrice * od.Quantity) - (od.Discount * (od.UnitPrice * od.Quantity))) as total_price
+               round((od.UnitPrice * od.Quantity) - (od.Discount * (od.UnitPrice * od.Quantity)), 2) as total_price
         from Orders o inner join Customers c on o.CustomerId = c.CustomerId
                       inner join 'Order Details' od on o.OrderId = od.OrderId
-                      inner join Products p on od.ProductId = p.ProductId
-        where p.ProductId = {product_id}
+        where od.ProductId = {product_id}
         order by o.OrderId
         """
     ).fetchall()
 
     if result is None:
-        return JSONResponse(status_code=404)
+        raise HTTPException(status_code=404)
 
     return dict(orders=result)
 
