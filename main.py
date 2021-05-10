@@ -31,14 +31,22 @@ class Category(BaseModel):
 @app.post("/categories", status_code=201)
 async def get_categories(category: Category):
     connection = app.db_connection
-    cursor = connection.execute(
-        f"insert into Categories (CategoryName) values ('{category.name}')"
+    execution = connection.execute(
+        "insert into Categories (CategoryName) values (?)",
+        (category.name, )
     )
     connection.commit()
-    return {
-        "id": cursor.lastrowid,
-        "name": category.name
-    }
+
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    result = cursor.execute(
+        """
+        SELECT CategoryID id, CategoryName name 
+        FROM Categories 
+        WHERE CategoryID = ?
+        """,
+        (execution.lastrowid,)).fetchone()
+    return result
 
 
 @app.put("/categories{category_id}", status_code=200)
@@ -106,6 +114,8 @@ async def delete_category(category_id: int = 0):
         "DELETE FROM Categories WHERE CategoryId = ?", (category_id,)
     )
     app.db_connection.commit()
+    if not cursor.rowcount:
+        raise HTTPException(status_code=404)
     return {"deleted": 1}
 
 
