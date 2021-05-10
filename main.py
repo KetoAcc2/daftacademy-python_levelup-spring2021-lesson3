@@ -34,19 +34,18 @@ async def products_orders(product_id: int = 0):
 
     count = cursor.execute(
         f"""
-        select ProductId
+        select ProductId as id, ProductName as name
         from Products
         where ProductId = {product_id}
         """
-    )
-    res = count.rowcount
+    ).fetchone()
 
-    if res == 0:
+    if len(count) == 0:
         return JSONResponse(status_code=404)
 
     result = cursor.execute(
         f"""
-        select o.OrderId as id, c.CompanyName as customer, od.Quantity as quantity, 
+        select o.OrderId as id, c.CompanyName as customer, od.Quantity as quantity,
                ((od.UnitPrice * od.Quantity) - (od.Discount * (od.UnitPrice * od.Quantity))) as total_price
         from Orders o inner join Customers c on o.CustomerId = c.CustomerId
                       inner join 'Order Details' od on o.OrderId = od.OrderId
@@ -55,6 +54,10 @@ async def products_orders(product_id: int = 0):
         order by o.OrderId
         """
     ).fetchall()
+
+    if result is None:
+        return JSONResponse(status_code=404)
+
     return dict(orders=result)
 
 
