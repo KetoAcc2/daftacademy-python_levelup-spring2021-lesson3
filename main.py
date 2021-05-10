@@ -24,6 +24,26 @@ async def shutdown():
     app.db_connection.close()
 
 
+@app.get("/products_extended", status_code=200)
+async def products_extended():
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
+    result = cursor.execute(
+        f"""
+        select p.ProductId as id, p.ProductName as name, 
+               ct.CategoryName as category, s.CompanyName as supplier 
+        from Products p inner join Categories ct on p.CategoryId = ct.CategoryId
+                        inner join Suppliers s on p.SupplierId = s.SupplierId
+        order by p.ProductId 
+        """
+    ).fetchall()
+    
+    if result is None:
+        return JSONResponse(status_code=404)
+
+    return dict(products_extended=result)
+
+
 @app.get("/employees", status_code=200)
 async def get_employees(limit: int = 1, offset: int = 0, order: str = 'EmployeeID'):
     valid_orders = ("FirstName", "LastName", "City")
