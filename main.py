@@ -41,32 +41,20 @@ async def get_categories(category: Category):
     }
 
 
-@app.put("/categories{category_id}", status_code=200)
-async def update_category(category: Category, category_id: int = 0):
-    if category_id == 0:
-        raise HTTPException(status_code=404)
-    
-    connection = app.db_connection
-    connection.execute(
-        "update Categories set CategoryName = ? where CategoryId = ?"
-        , (category.name, category_id, )
+@app.put('/categories/{id}', status_code=200)
+async def categories_id(category: Category, category_id: int):
+    app.db_connection.execute(
+        "UPDATE Categories SET CategoryName = ? WHERE CategoryID = ?", (
+            category.name, category_id,)
     )
-    connection.commit()
-
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    result = cursor.execute(
-        f"""
-        select CategoryId as id, CategoryName as name
-        from Categories 
-        where CategoryId = {category_id}
-        """
-    ).fetchone()
-
-    if result is None:
+    app.db_connection.commit()
+    app.db_connection.row_factory = sqlite3.Row
+    data = app.db_connection.execute(
+        """SELECT CategoryID id, CategoryName name FROM Categories WHERE CategoryID = ?""",
+        (category_id,)).fetchone()
+    if data is None:
         raise HTTPException(status_code=404)
-    
-    return result
+    return data
 
 
 @app.delete("/categories/category_id", status_code=200)
