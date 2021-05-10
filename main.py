@@ -45,27 +45,16 @@ async def get_categories(category: Category):
 async def update_category(category: Category, category_id: int = 0):
     if category_id == 0:
         raise HTTPException(status_code=404)
-
-    cursor = app.db_connection.cursor()
-    cursor.row_factory = sqlite3.Row
-    count = cursor.execute(
-        f"""
-            select CategoryId
-            from Categories
-            where CategoryId = {category_id}
-            """
-    ).fetchone()
-
-    if count is None:
-        raise HTTPException(status_code=404)
-
+    
     connection = app.db_connection
     connection.execute(
         "update Categories set CategoryName = ? where CategoryId = ?"
-        , (category.name, category_id)
+        , (category.name, category_id, )
     )
     connection.commit()
 
+    cursor = app.db_connection.cursor()
+    cursor.row_factory = sqlite3.Row
     result = cursor.execute(
         f"""
         select CategoryId as id, CategoryName as name
@@ -74,6 +63,9 @@ async def update_category(category: Category, category_id: int = 0):
         """
     ).fetchone()
 
+    if result is None:
+        raise HTTPException(status_code=404)
+    
     return result
 
 
